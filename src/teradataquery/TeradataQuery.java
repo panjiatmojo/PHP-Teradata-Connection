@@ -34,6 +34,8 @@ public class TeradataQuery {
     public PreparedStatement stmt = null;
     public ResultSet rs = null;
     public HashMap<String, Object> resultArray = new HashMap<>();
+    public Boolean queryStatus = false;
+    public Integer affectedRows = 0;
 
     public static void main(String[] args) throws Exception {
 
@@ -88,7 +90,24 @@ public class TeradataQuery {
     }
 
     public void getResult() throws SQLException {
-        this.rs = this.stmt.executeQuery();
+
+        switch (this.queryType) {
+            case "select":
+                this.rs = this.stmt.executeQuery();
+                break;
+            case "insert":
+                this.affectedRows = this.stmt.executeUpdate();
+                break;
+            case "update":
+                this.affectedRows = this.stmt.executeUpdate();
+                break;
+            case "delete":
+                this.affectedRows = this.stmt.executeUpdate();
+                break;
+            default:
+                this.rs = this.stmt.executeQuery();
+                break;
+        }
 
         HashMap<Integer, Object> resultMap = new HashMap<>();
 
@@ -99,10 +118,10 @@ public class TeradataQuery {
         Integer rowNum = 0;
         while (this.rs.next()) {
             Integer columnCount = 0;
-            HashMap<Integer, Object> rowResult = new HashMap<>();
+            HashMap<String, Object> rowResult = new HashMap<>();
 
             for (columnCount = 0; columnCount < columnsNumber; columnCount++) {
-                rowResult.put(columnCount, rs.getString(columnCount + 1));
+                rowResult.put(rsmd.getColumnName(columnCount + 1).toLowerCase(), rs.getString(columnCount + 1));
             }
             resultMap.put(rowNum, rowResult);
             rowNum++;
@@ -147,15 +166,20 @@ public class TeradataQuery {
 
     public void analyze() {
         String[] queryArray = this.query.split(";");
+
+        if (queryArray.length == 0) {
+            queryArray[0] = this.query;
+        }
+
         int queryLength = queryArray.length;
 
-        String lastQuery = queryArray[queryLength - 1].toLowerCase();
+        String lastQuery = queryArray[0].toLowerCase();
         String type = "others";
 
-        Pattern select = Pattern.compile("^select.*");
-        Pattern insert = Pattern.compile("^insert.*");
-        Pattern update = Pattern.compile("^update.*");
-        Pattern delete = Pattern.compile("^delete.*");
+        Pattern select = Pattern.compile("^.*?select.*$");
+        Pattern insert = Pattern.compile("^.*?insert.*$");
+        Pattern update = Pattern.compile("^.*?update.*$");
+        Pattern delete = Pattern.compile("^.*?delete.*$");
 
         Matcher m = select.matcher(lastQuery);
         if (m.matches()) {
