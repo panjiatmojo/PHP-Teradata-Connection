@@ -92,9 +92,7 @@ public class TeradataQuery {
     public void getResult() throws SQLException {
 
         switch (this.queryType) {
-            case "select":
-                this.rs = this.stmt.executeQuery();
-                break;
+
             case "insert":
                 this.affectedRows = this.stmt.executeUpdate();
                 break;
@@ -104,6 +102,9 @@ public class TeradataQuery {
             case "delete":
                 this.affectedRows = this.stmt.executeUpdate();
                 break;
+            case "select":
+                this.rs = this.stmt.executeQuery();
+                break;
             default:
                 this.rs = this.stmt.executeQuery();
                 break;
@@ -111,22 +112,30 @@ public class TeradataQuery {
 
         HashMap<Integer, Object> resultMap = new HashMap<>();
 
-        ResultSetMetaData rsmd = rs.getMetaData();
+        if (this.queryType.equals("select")) {
+            /*  if query type is select then provide result set */
 
-        int columnsNumber = rsmd.getColumnCount();
+            ResultSetMetaData rsmd = rs.getMetaData();
 
-        Integer rowNum = 0;
-        while (this.rs.next()) {
-            Integer columnCount = 0;
-            HashMap<String, Object> rowResult = new HashMap<>();
+            int columnsNumber = rsmd.getColumnCount();
 
-            for (columnCount = 0; columnCount < columnsNumber; columnCount++) {
-                rowResult.put(rsmd.getColumnName(columnCount + 1).toLowerCase(), rs.getString(columnCount + 1));
+            Integer rowNum = 0;
+            while (this.rs.next()) {
+                Integer columnCount = 0;
+                HashMap<String, Object> rowResult = new HashMap<>();
+
+                for (columnCount = 0; columnCount < columnsNumber; columnCount++) {
+                    rowResult.put(rsmd.getColumnName(columnCount + 1).toLowerCase(), rs.getString(columnCount + 1));
+                }
+                resultMap.put(rowNum, rowResult);
+                rowNum++;
             }
-            resultMap.put(rowNum, rowResult);
-            rowNum++;
-        }
+        } else {
+            HashMap<String, Object> rowResult = new HashMap<>();
+            rowResult.put("affectedRows", this.affectedRows);
+            resultMap.put(0, rowResult);
 
+        }
         /* put the result into resultArray */
         this.resultArray.put("data", resultMap);
     }
